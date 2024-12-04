@@ -1,0 +1,12 @@
+npm run docker:build
+npm run docker:run.git
+.gitignore
+.next
+.env
+.env.*
+node_modules
+README.md
+.dockerignore
+Dockerfile
+docker-compose.yml
+*.log
