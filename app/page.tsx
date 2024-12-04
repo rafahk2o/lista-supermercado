@@ -16,21 +16,6 @@ export default function Home() {
 
   useEffect(() => {
     fetchItems();
-    
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel('grocery_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'grocery_items' }, 
-        () => {
-          fetchItems();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   const fetchItems = async () => {
@@ -51,14 +36,17 @@ export default function Home() {
 
   const addItem = async (newItem: Omit<GroceryItem, "id" | "completed" | "created_at" | "updated_at">) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('grocery_items')
         .insert({
           ...newItem,
           completed: false,
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+      setItems(prev => [data, ...prev]);
     } catch (error) {
       console.error('Error adding item:', error);
     }
@@ -75,6 +63,9 @@ export default function Home() {
         .eq('id', id);
 
       if (error) throw error;
+      setItems(prev => prev.map(item => 
+        item.id === id ? { ...item, completed: !item.completed } : item
+      ));
     } catch (error) {
       console.error('Error toggling item:', error);
     }
@@ -88,6 +79,7 @@ export default function Home() {
         .eq('id', id);
 
       if (error) throw error;
+      setItems(prev => prev.filter(item => item.id !== id));
     } catch (error) {
       console.error('Error deleting item:', error);
     }
